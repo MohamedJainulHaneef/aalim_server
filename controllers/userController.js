@@ -66,7 +66,7 @@ const editStaff = async (req, res) => {
         if (!user) return res.status(404).json({ message: 'User not found' });
         res.status(200).json({ message: 'User updated successfully' })
     } catch (error) {
-        console.log(error)
+        console.log(error);
         res.status(500).json({ message: 'Error updaing user' });
     }
 }

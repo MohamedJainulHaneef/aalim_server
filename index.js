@@ -20,13 +20,11 @@ app.use(cors({
     credentials: true 
 }));
 
-console.log("🌍 MONGO_URI:", process.env.MONGO_URI);
-
 app.use('/api/users', userRoutes);
 app.use('/api/timeTable', timeTableRoutes);
 app.use('/api/academic', academicRoutes);
 app.use('/api/leave', leaveRoutes);
 app.use('/api/substitution', substitutionRoutes);
 
-const PORT = process.env.MONGO_URI || 5000;
-app.listen(PORT, () => { console.log(`Server running on port ${PORT}`) });
+const PORTNO = process.env.MONGO_URI || PORT;
+app.listen(PORTNO, () => { console.log(`Server running on port MongoDB Atlas`) });
