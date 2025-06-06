@@ -12,10 +12,10 @@ dotenv.config();
 
 const app = express();
 app.use(express.json()); 
-connectDB();
+connectDB(); 
 
 app.use(cors({ 
-    origin: 'https://aalim-client.vercel.app/', 
+    origin: 'https://aalim-client.vercel.app',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], 
     credentials: true 
 }));
@@ -26,5 +26,7 @@ app.use('/api/academic', academicRoutes);
 app.use('/api/leave', leaveRoutes);
 app.use('/api/substitution', substitutionRoutes);
 
-const PORTNO = process.env.MONGO_URI || PORT;
-app.listen(PORTNO, () => { console.log(`Server running on port MongoDB Atlas`) });
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});

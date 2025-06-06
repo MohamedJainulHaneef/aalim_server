@@ -58,6 +58,7 @@ const fetchStaff = async (req, res) => {
 const editStaff = async (req, res) => {
 
     const { staffId, fullName, password } = req.body;
+    console.log( staffId, fullName, password )
 
     try {
         const user = await Staff.findOneAndUpdate(
