@@ -1,6 +1,4 @@
 const Staff = require('../models/Staff');
-const Student = require('../models/Student');
-const TimeTable = require('../models/TimeTable');
 
 // --------------------------------------------------------------------------------------------------------------
 
@@ -26,9 +24,7 @@ const loginStaff = async (req, res) => {
 
 const addStaff = async (req, res) => {
 
-    const { staffId, fullName, password } = req.body;
-
-    console.log(req.body)
+    const { staffId, fullName, password } = req.body;s
 
     try {
         const userExists = await Staff.findOne({ staffId });

@@ -4,6 +4,9 @@ const cors = require('cors');
 const connectDB = require('./config/db'); 
 const userRoutes = require('./routes/userRoutes');
 const timeTableRoutes = require('./routes/timeTableRoutes');
+const academicRoutes = require('./routes/academicRoutes');
+const leaveRoutes = require('./routes/leaveRoutes');
+const substitutionRoutes = require('./routes/substitutionRoutes');
 
 dotenv.config(); 
 
@@ -19,6 +22,9 @@ app.use(cors({
 
 app.use('/api/users', userRoutes);
 app.use('/api/timeTable', timeTableRoutes);
+app.use('/api/academic', academicRoutes);
+app.use('/api/leave', leaveRoutes);
+app.use('/api/substitution', substitutionRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => { console.log(`Server running on port ${PORT}`) });
