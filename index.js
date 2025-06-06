@@ -15,10 +15,12 @@ app.use(express.json());
 connectDB();
 
 app.use(cors({ 
-    origin: 'http://localhost:5173', 
+    origin: 'https://aalim-client.vercel.app/', 
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], 
     credentials: true 
 }));
+
+console.log("🌍 MONGO_URI:", process.env.MONGO_URI);
 
 app.use('/api/users', userRoutes);
 app.use('/api/timeTable', timeTableRoutes);
@@ -26,5 +28,5 @@ app.use('/api/academic', academicRoutes);
 app.use('/api/leave', leaveRoutes);
 app.use('/api/substitution', substitutionRoutes);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.MONGO_URI || 5000;
 app.listen(PORT, () => { console.log(`Server running on port ${PORT}`) });
