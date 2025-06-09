@@ -3,7 +3,8 @@ const Student = require('../models/Student');
 const TimeTable = require('../models/TimeTable');
 const Leave = require('../models/Leave');
 const Substitution = require('../models/Substitution');
-const Academic = require('../models/Academic')
+const Academic = require('../models/Academic');
+const Course = require('../models/Course')
 
 // --------------------------------------------------------------------------------------------------------------
 
@@ -15,39 +16,28 @@ const timeTableFetch = async (req, res) => {
 
     try {
 
-        // console.log('Staff Id : ', staffId);
-
-        //  Step 1: Get current date at UTC midnight
         const now = new Date();
         const currentDate = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-        // console.log("Current Date : ", currentDate);
 
-        //  Step 2: Check if today is a college leave
         const todayLeave = await Leave.findOne({
             leaveFromDate: { $lte: currentDate },
             leaveToDate: { $gte: currentDate }
         });
 
-        if (todayLeave) { return res.status(200).json({ message: 'Today is a college leave', leave: todayLeave }) }
+        if (todayLeave) { return res.status(200).json([{ message: 'Today is a college leave', leave: todayLeave }]) }
 
-        //  Step 3: Find the academic year that includes currentDate
         const academic = await Academic.findOne({
             academicFromDate: { $lte: currentDate },
             academicToDate: { $gte: currentDate }
         });
 
-        if (!academic) {
-            // console.log('Academic period not found');
-            return res.status(404).json({ message: "Academic period not found" });
-        }
+        if (!academic) { return res.status(404).json([{ message: "Academic period not found" }]) }
 
-        //  Step 4: Get all leave dates from academic start to current date
         const allLeaves = await Leave.find({
             leaveToDate: { $gte: academic.academicFromDate },
             leaveFromDate: { $lte: currentDate }
         });
 
-        //  Step 5: Convert leave ranges to set of leave days
         const leaveDatesSet = new Set();
         allLeaves.forEach(leave => {
             let d = new Date(leave.leaveFromDate);
@@ -60,7 +50,6 @@ const timeTableFetch = async (req, res) => {
             }
         });
 
-        //  Step 6: Count working days to calculate day order
         let dayCounter = 0;
         const iterDate = new Date(Date.UTC(
             academic.academicFromDate.getUTCFullYear(),
@@ -71,37 +60,64 @@ const timeTableFetch = async (req, res) => {
         while (iterDate <= currentDate) {
             const isSunday = iterDate.getUTCDay() === 0;
             const isLeave = leaveDatesSet.has(iterDate.getTime());
-            if (!isSunday && !isLeave) { dayCounter++ }
+            if (!isSunday && !isLeave) dayCounter++;
             iterDate.setUTCDate(iterDate.getUTCDate() + 1);
         }
 
         const dayOrder = dayCounter % 6 === 0 ? 6 : dayCounter % 6;
-        // console.log("Day Order : ", dayOrder);
 
-        // Time Table Fetching 
         const timeTable = await TimeTable.find({
             day_order: dayOrder,
             $or: [{ session_1: staffId }, { session_2: staffId }]
-        })
-        // console.log('Fetched Time Table : ', timeTable);
+        });
 
-        const substitution = await Substitution.find({ absentStaffId: staffId, date: currentDate });
-        // console.log('Substitution Class : ', substitution);
+        const substitution = await Substitution.find({ replacementStaffId: staffId, date: currentDate });
+        const substituted = await Substitution.find({ absentStaffId: staffId, date: currentDate });
 
         const filteredTimeTable = timeTable.filter(t => {
-            for (let s of substitution) {
+            for (let s of substituted) {
                 const sameYear = t.year === s.year;
-                if (sameYear && s.session === 'I Hour' && t.session_1 === staffId) { return false }
-                if (sameYear && s.session === 'II Hour' && t.session_2 === staffId) { return false }
+                if (sameYear && s.session === 'I Hour' && t.session_1 === staffId) return false;
+                if (sameYear && s.session === 'II Hour' && t.session_2 === staffId) return false;
             }
             return true;
         });
-        // console.log('Filtered Time Table : ', filteredTimeTable);
+
+        const classList = [];
+
+        substitution.forEach(sub => {
+            classList.push({ year: sub.year, session: sub.session });
+        });
+
+        filteredTimeTable.forEach(t => {
+            if (t.session_1 === staffId) {
+                classList.push({ year: t.year, session: 'I Hour' });
+            }
+            if (t.session_2 === staffId) {
+                classList.push({ year: t.year, session: 'II Hour' });
+            }
+        });
+
+        const currentAcademic = await Academic.findOne().sort({ academicFromDate: -1 }).lean();
+        const semType = currentAcademic.semester;
+
+        const enhancedClassList = await Promise.all(
+            classList.map(async (cls) => {
+                const course = await Course.findOne({ year: cls.year, sem_type: semType }).lean();
+                return {
+                    ...cls, semester: course?.semester || 'N/A',
+                    course_code: course?.courseCode || 'N/A',
+                    course_title: course?.courseTitle || 'N/A',
+                };
+            })
+        );
+
+        const staff = await Staff.findOne({ staffId }, 'fullName').lean();
+
+        return res.status(200).json([ { staffName: staff?.fullName || 'N/A' }, ...enhancedClassList ]);
     }
-    catch (error) {
-        // console.error("Server Error:", error);
-        res.status(500).json({ message: 'Server error' });
-    }
-}
+    catch (error) { res.status(500).json([{ message: 'Server error' }]) }
+};
+
 
 module.exports = { timeTableFetch };

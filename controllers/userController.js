@@ -24,7 +24,7 @@ const loginStaff = async (req, res) => {
 
 const addStaff = async (req, res) => {
 
-    const { staffId, fullName, password } = req.body;s
+    const { staffId, fullName, password } = req.body;
 
     try {
         const userExists = await Staff.findOne({ staffId });
