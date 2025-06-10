@@ -6,14 +6,15 @@ const Leave = require('../models/Leave');
 
 const leaveAdd = async (req, res) => {
 
-    const { leaveFromDate, leaveToDate } = req.body;
+    const { leaveFromDate, leaveToDate, reason } = req.body;
+    console.log(req.body)
 
     try {
-        const exists = await Leave.findOne({ leaveFromDate, leaveToDate });
+        const exists = await Leave.findOne({ leaveFromDate, leaveToDate, reason });
         if (exists) return res.status(409).json(
             { message: 'Entry already exists.' }
         );
-        const newLeave = new Leave({ leaveFromDate, leaveToDate });
+        const newLeave = new Leave({ leaveFromDate, leaveToDate, reason });
         await newLeave.save();
         return res.status(201).json({ message: 'Leave Added Succesfully' });
     } catch (error) {

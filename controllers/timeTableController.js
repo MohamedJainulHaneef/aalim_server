@@ -3,6 +3,7 @@ const Student = require('../models/Student');
 const TimeTable = require('../models/TimeTable');
 const Leave = require('../models/Leave');
 const Substitution = require('../models/Substitution');
+const Attendance = require('../models/Attendance');
 const Academic = require('../models/Academic');
 const Course = require('../models/Course')
 
@@ -85,9 +86,7 @@ const timeTableFetch = async (req, res) => {
 
         const classList = [];
 
-        substitution.forEach(sub => {
-            classList.push({ year: sub.year, session: sub.session });
-        });
+        substitution.forEach(sub => { classList.push({ year: sub.year, session: sub.session }) });
 
         filteredTimeTable.forEach(t => {
             if (t.session_1 === staffId) {
@@ -102,19 +101,40 @@ const timeTableFetch = async (req, res) => {
         const semType = currentAcademic.semester;
 
         const enhancedClassList = await Promise.all(
+
             classList.map(async (cls) => {
                 const course = await Course.findOne({ year: cls.year, sem_type: semType }).lean();
+                const startOfDay = new Date(currentDate);
+                startOfDay.setHours(0, 0, 0, 0);
+                const endOfDay = new Date(currentDate);
+                endOfDay.setHours(23, 59, 59, 999);
+
+                const attendance = await Attendance.findOne({
+                    staffId, year: cls.year,session: cls.session,
+                    date: { $gte: startOfDay, $lte: endOfDay },
+                }).lean();
+
+                let total = 0, presentees = 0, absentees = 0;
+
+                if (attendance?.record) {
+                    total = attendance.record.length;
+                    presentees = attendance.record.filter(r => r.status === true).length;
+                    absentees = total - presentees;
+                } else { total = (await Student.find({ year: cls.year })).length }
+
                 return {
-                    ...cls, semester: course?.semester || 'N/A',
+                    ...cls, total, presentees, absentees,
+                    semester: course?.semester || 'N/A',
                     course_code: course?.courseCode || 'N/A',
                     course_title: course?.courseTitle || 'N/A',
-                };
+                    
+                }
             })
-        );
+        )
 
         const staff = await Staff.findOne({ staffId }, 'fullName').lean();
 
-        return res.status(200).json([ { staffName: staff?.fullName || 'N/A' }, ...enhancedClassList ]);
+        return res.status(200).json([{ staffName: staff?.fullName || 'N/A' }, ...enhancedClassList]);
     }
     catch (error) { res.status(500).json([{ message: 'Server error' }]) }
 };
