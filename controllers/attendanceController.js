@@ -30,7 +30,7 @@ const studentInfo = async (req, res) => {
         }
         const students = await Student.find({ year: studentYear });
         const studentData = students.map((student) => ({
-            reg_no: student.reg_no, roll_no: student.roll_no, status: false, stu_name: student.stu_name
+            reg_no: student.reg_no, roll_no: student.roll_no, status: true, stu_name: student.stu_name
         }))
         return res.json(studentData);
     } catch (error) {
