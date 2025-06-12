@@ -16,8 +16,8 @@ app.use(express.json());
 connectDB();
 
 app.use(cors({
-    // origin: 'https://aalim-client.vercel.app',
-    origin: process.env.FRONTEND_URL,
+    origin: 'https://aalim-client.vercel.app',
+    // origin: process.env.FRONTEND_URL,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true
 }));
