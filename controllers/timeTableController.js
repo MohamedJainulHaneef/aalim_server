@@ -90,7 +90,7 @@ const timeTableFetch = async (req, res) => {
 
         filteredTimeTable.forEach(t => {
             if (t.session_1 === staffId) { classList.push({ year: t.year, session: 'I Hour' }) }
-            if (t.session_2 === staffId) { lassList.push({ year: t.year, session: 'II Hour' }) }
+            if (t.session_2 === staffId) { classList.push({ year: t.year, session: 'II Hour' }) }
         });
 
         const currentAcademic = await Academic.findOne().sort({ academicFromDate: -1 }).lean();
