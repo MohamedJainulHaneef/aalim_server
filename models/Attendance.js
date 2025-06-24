@@ -5,6 +5,7 @@ const attendanceSchema = new mongoose.Schema({
     year: { type: String, required: true },
     date: { type: Date, required: true },
     session: { type: String, required: true },
+    courseCode: { type: String, required: true },
     record: [{ roll_no: { type: String }, status: { type: Boolean } }]
 }, { timestamps: false });
 

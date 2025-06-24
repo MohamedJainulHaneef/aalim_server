@@ -99,7 +99,7 @@ const timeTableFetch = async (req, res) => {
         const enhancedClassList = await Promise.all(
 
             classList.map(async (cls) => {
-                const course = await Course.findOne({ year: cls.year, sem_type: semType }).lean();
+                const course = await Course.findOne({ year: cls.year, semester: semType, handleStaffs: staffId }).lean();
                 const startOfDay = new Date(currentDate);
                 startOfDay.setHours(0, 0, 0, 0);
                 const endOfDay = new Date(currentDate);
