@@ -44,7 +44,7 @@ const studentInfo = async (req, res) => {
 
 const attendanceSave = async (req, res) => {
 
-    const { year, session, date, staffId, record } = req.body;
+    const { year, session, date, staffId, record, courseCode } = req.body;
 
     try {
         const dateObj = new Date(date);
@@ -60,7 +60,7 @@ const attendanceSave = async (req, res) => {
             await existingAttendance.save();
             return res.status(200).json({ message: 'Attendance updated successfully' });
         } else {
-            const newAttendance = new Attendance({ year, session, date: new Date(date), staffId, record });
+            const newAttendance = new Attendance({ year, session, date: new Date(date), staffId, record, courseCode });
             await newAttendance.save();
             return res.status(201).json({ message: 'Attendance saved successfully' });
         }
