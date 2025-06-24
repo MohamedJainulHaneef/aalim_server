@@ -17,7 +17,7 @@ const timeTableFetch = async (req, res) => {
 
     try {
 
-        const now = new Date("23-Jun-2025");
+        const now = new Date();
         const currentDate = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
 
         const todayLeave = await Leave.findOne({
