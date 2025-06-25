@@ -67,14 +67,21 @@ const timeTableFetch = async (req, res) => {
 
         const dayOrder = dayCounter % 6 === 0 ? 6 : dayCounter % 6;
 
+        // Fetching classes based on Time Table
         const timeTable = await TimeTable.find({
             day_order: dayOrder,
             $or: [{ session_1: staffId }, { session_2: staffId }]
         });
+        // console.log("Timetable :",timeTable)
 
         const substitution = await Substitution.find({ replacementStaffId: staffId, date: currentDate });
+        // console.log("Substitution : ", substitution);
         const substituted = await Substitution.find({ absentStaffId: staffId, date: currentDate });
+        // console.log("Substituted : ", substituted);
+        const absentStaff = substitution[0]?.absentStaffId;
+        // console.log(absentStaff)
 
+        // Removing substituted class from the Time Table
         const filteredTimeTable = timeTable.filter(t => {
             for (let s of substituted) {
                 const sameYear = t.year === s.year;
@@ -83,30 +90,33 @@ const timeTableFetch = async (req, res) => {
             }
             return true;
         });
+        // console.log('Filtered TimeTable : ', filteredTimeTable)
 
         const classList = [];
 
         substitution.forEach(sub => { classList.push({ year: sub.year, session: sub.session }) });
 
+        // Add substitution class
         filteredTimeTable.forEach(t => {
             if (t.session_1 === staffId) { classList.push({ year: t.year, session: 'I Hour' }) }
             if (t.session_2 === staffId) { classList.push({ year: t.year, session: 'II Hour' }) }
         });
+        // console.log("Class List : ", classList)
 
         const currentAcademic = await Academic.findOne().sort({ academicFromDate: -1 }).lean();
         const semType = currentAcademic.semester;
 
         const enhancedClassList = await Promise.all(
-
             classList.map(async (cls) => {
-                const course = await Course.findOne({ year: cls.year, semester: semType, handleStaffs: staffId }).lean();
+
+                const course = await Course.findOne({ year: cls.year, semester: semType, handleStaffs: { $in: [staffId, absentStaff] } }).lean();
                 const startOfDay = new Date(currentDate);
                 startOfDay.setHours(0, 0, 0, 0);
                 const endOfDay = new Date(currentDate);
                 endOfDay.setHours(23, 59, 59, 999);
 
                 const attendance = await Attendance.findOne({
-                    staffId, year: cls.year,session: cls.session,
+                    staffId, year: cls.year, session: cls.session,
                     date: { $gte: startOfDay, $lte: endOfDay },
                 }).lean();
 
@@ -123,17 +133,13 @@ const timeTableFetch = async (req, res) => {
                     semester: course?.semester || 'N/A',
                     course_code: course?.courseCode || 'N/A',
                     course_title: course?.courseTitle || 'N/A',
-                    
                 }
             })
         )
-
         const staff = await Staff.findOne({ staffId }, 'fullName').lean();
-
         return res.status(200).json([{ staffName: staff?.fullName || 'N/A' }, ...enhancedClassList]);
     }
     catch (error) { res.status(500).json([{ message: 'Server error' }]) }
-};
-
+}
 
 module.exports = { timeTableFetch };
