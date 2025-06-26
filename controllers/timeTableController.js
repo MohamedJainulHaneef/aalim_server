@@ -14,6 +14,7 @@ const Course = require('../models/Course')
 const timeTableFetch = async (req, res) => {
 
     const { staffId } = req.body;
+    // console.log(staffId);
 
     try {
 
@@ -72,7 +73,7 @@ const timeTableFetch = async (req, res) => {
             day_order: dayOrder,
             $or: [{ session_1: staffId }, { session_2: staffId }]
         });
-        // console.log("Timetable :",timeTable)
+        // console.log("Timetable :", timeTable)
 
         const substitution = await Substitution.find({ replacementStaffId: staffId, date: currentDate });
         // console.log("Substitution : ", substitution);
@@ -94,7 +95,7 @@ const timeTableFetch = async (req, res) => {
 
         const classList = [];
 
-        substitution.forEach(sub => { classList.push({ year: sub.year, session: sub.session }) });
+        substitution.forEach(sub => { classList.push({ year: sub.year, session: sub.session, absentStaffId: sub.absentStaffId }) });
 
         // Add substitution class
         filteredTimeTable.forEach(t => {
@@ -107,9 +108,14 @@ const timeTableFetch = async (req, res) => {
         const semType = currentAcademic.semester;
 
         const enhancedClassList = await Promise.all(
-            classList.map(async (cls) => {
 
-                const course = await Course.findOne({ year: cls.year, semester: semType, handleStaffs: { $in: [staffId, absentStaff] } }).lean();
+            classList.map(async (cls) => { let course;
+                const courseFilter = {
+                    year: cls.year, semester: semType,
+                    handleStaffs: cls.absentStaffId || staffId
+                }
+
+                course = await Course.findOne(courseFilter).lean();
                 const startOfDay = new Date(currentDate);
                 startOfDay.setHours(0, 0, 0, 0);
                 const endOfDay = new Date(currentDate);
