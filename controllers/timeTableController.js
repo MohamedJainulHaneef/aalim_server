@@ -14,12 +14,13 @@ const Course = require('../models/Course')
 const timeTableFetch = async (req, res) => {
 
     const { staffId } = req.body;
-    // console.log(staffId);
 
     try {
 
         const now = new Date();
         const currentDate = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+        const isSunday = currentDate.getUTCDay() === 0;
+        if (isSunday) { return res.status(200).json([{ message: 'Today is Sunday - No classes' }])}
 
         const todayLeave = await Leave.findOne({
             leaveFromDate: { $lte: currentDate },
@@ -67,13 +68,14 @@ const timeTableFetch = async (req, res) => {
         }
 
         const dayOrder = dayCounter % 6 === 0 ? 6 : dayCounter % 6;
+        console.log(dayOrder)
 
         // Fetching classes based on Time Table
         const timeTable = await TimeTable.find({
             day_order: dayOrder,
             $or: [{ session_1: staffId }, { session_2: staffId }]
         });
-        // console.log("Timetable :", timeTable)
+        console.log("Timetable :", timeTable)
 
         const substitution = await Substitution.find({ replacementStaffId: staffId, date: currentDate });
         // console.log("Substitution : ", substitution);
@@ -109,7 +111,8 @@ const timeTableFetch = async (req, res) => {
 
         const enhancedClassList = await Promise.all(
 
-            classList.map(async (cls) => { let course;
+            classList.map(async (cls) => {
+                let course;
                 const courseFilter = {
                     year: cls.year, semester: semType,
                     handleStaffs: cls.absentStaffId || staffId

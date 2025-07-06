@@ -58,39 +58,39 @@ router.post('/timetable', upload.single('file'), async (req, res) => {
 router.post('/studentupload', upload.single('file'), async (req, res) => {
 
     try {
+
         const file = req.file;
-        
-        if (!file) { return res.status(400).send('File upload failed') }
+        if (!file) return res.status(400).send('No file uploaded');
 
         const workbook = XLSX.readFile(file.path);
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const rows = XLSX.utils.sheet_to_json(worksheet);
+        const rows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
 
         const expectedHeaders = ['roll_no', 'reg_no', 'stu_name', 'year'];
-        const firstRow = rows[0] || {};
-        const actualHeaders = Object.keys(firstRow);
-
+        const actualHeaders = Object.keys(rows[0] || {});
         const isValid = expectedHeaders.every(header => actualHeaders.includes(header));
         if (!isValid) {
             fs.unlinkSync(file.path);
-            return res.status(400).send('Invalid student file format. Please upload correct headers.');
+            return res.status(400).send('Invalid headers. Must include: roll_no, reg_no, stu_name, year');
         }
 
         for (const row of rows) {
             const { roll_no, reg_no, stu_name, year } = row;
-            if (!roll_no || !reg_no || !stu_name || !year) continue;
-            const exists = await Student.findOne({ roll_no });
-            if (!exists) { await Student.create({ roll_no, reg_no, stu_name, year }) }
+            if (!roll_no) continue;
+            await Student.findOneAndUpdate(
+                { roll_no },
+                { $set: { reg_no, stu_name, year } },
+                { upsert: true, new: true }
+            )
         }
 
         fs.unlinkSync(file.path);
-        res.status(200).send('Student File Imported Successfully');
+        res.status(200).send('Student data imported successfully (inserted/updated by roll_no)');
     } catch (err) {
-        console.error('Upload Error:', err);
+        console.error('Upload error:', err);
         res.status(500).send('Error while uploading student file');
     }
 })
-
 
 module.exports = router;
