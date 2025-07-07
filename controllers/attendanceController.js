@@ -1,6 +1,5 @@
 const Student = require('../models/Student');
 const Attendance = require('../models/Attendance');
-const attendance = require('../models/Attendance');
 const student = require('../models/Student');
 const Academic = require('../models/Academic')
 const Leave = require('../models/Leave')
@@ -86,7 +85,6 @@ const stuInfo = async (req, res) => {
     try {
 
         const { date, year, session } = req.body;
-        console.log(req.body)
 
         const startOfDay = new Date(date);
         startOfDay.setHours(0, 0, 0, 0);
@@ -139,30 +137,24 @@ const saveAttendance = async (req, res) => {
 
         const { date, year, session, record } = req.body;
 
-        if (!date || !year || !session || !Array.isArray(record)) {
-            return res.status(400).json({ message: 'Missing required fields' });
-        }
+        const inputDate = new Date(date);
+        const currentDate = new Date(Date.UTC(inputDate.getUTCFullYear(), inputDate.getUTCMonth(), inputDate.getUTCDate()));
+        const startOfDay = new Date(currentDate);
+        startOfDay.setUTCHours(0, 0, 0, 0);
 
-        const queryDate = new Date(date);
-        queryDate.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(currentDate);
+        endOfDay.setUTCHours(23, 59, 59, 999);
 
         const existing = await Attendance.findOne({
-            date: {
-                $gte: new Date(queryDate.setHours(0, 0, 0, 0)),
-                $lte: new Date(queryDate.setHours(23, 59, 59, 999))
-            }, year, session
+            date: { $gte: startOfDay, $lte: endOfDay }, year, session
         });
 
         if (!existing) {
 
-            const now = queryDate;
-            const currentDate = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-
             const todayLeave = await Leave.findOne({
                 leaveFromDate: { $lte: currentDate },
                 leaveToDate: { $gte: currentDate }
-            });
-
+            })
             if (todayLeave) {
                 return res.status(200).json([{ message: 'Today is a college leave', leave: todayLeave }]);
             }
@@ -209,44 +201,30 @@ const saveAttendance = async (req, res) => {
 
             const dayOrder = dayCounter % 6 === 0 ? 6 : dayCounter % 6;
 
-            const timetable = await Timetable.findOne({ day_order: dayOrder, year: year });
+            const timetable = await Timetable.findOne({ day_order: dayOrder, year });
 
             let staffId;
-
-            if (session === 'I Hour' && timetable) { staffId = timetable.session_1 } 
-            else if (session === 'II Hour' && timetable) { staffId = timetable.session_2 } 
-            else { staffId = null  }
+            if (session === 'I Hour' && timetable) staffId = timetable.session_1;
+            else if (session === 'II Hour' && timetable) staffId = timetable.session_2;
 
             if (!staffId) {
                 return res.status(404).json({ message: 'Staff not found for session' });
             }
 
-            const selectedDate = new Date(date);
-
-            const startOfDay = new Date(selectedDate.setHours(0, 0, 0, 0));
-            const endOfDay = new Date(selectedDate.setHours(23, 59, 59, 999));
-
             const substitution = await Substitution.findOne({
-                absentStaffId: staffId, year: year, session: session, 
+                absentStaffId: staffId, year, session,
                 date: { $gte: startOfDay, $lte: endOfDay }
             });
 
-            if (substitution) { staffId = substitution.replacementStaffId }
+            const course = await Course.findOne({ year, handleStaffs: staffId }).select('courseCode');
 
-            const course = await Course.findOne({
-                year: year,
-                handleStaffs: staffId
-            }).select('courseCode');
+            if (!course) { return res.status(404).json({ message: 'Course not found for staff' }) }
 
-            if (!course) {
-                return res.status(404).json({ message: 'Course not found for staff' });
-            }
+            if (substitution) staffId = substitution.replacementStaffId;
 
-            const courseCode = course.courseCode;
-
-            const newAttendance = new attendance({
-                staffId,  year, date: selectedDate,
-                session, courseCode, record
+            const newAttendance = new Attendance({
+                staffId, year, date: currentDate, session,
+                courseCode: course.courseCode, record
             });
 
             await newAttendance.save();
@@ -254,13 +232,14 @@ const saveAttendance = async (req, res) => {
             return res.status(201).json({ message: 'Attendance created successfully', data: newAttendance });
         }
 
-        existing.record = record;  await existing.save();
+        existing.record = record;
+        await existing.save();
         return res.status(200).json({ message: 'Attendance updated successfully', data: existing });
 
     } catch (error) {
-        console.error('Error saving attendance:', error);
+        console.error('Error saving attendance for Admin : ', error);
         return res.status(500).json({ message: 'Server error' });
     }
-};
+}
 
 module.exports = { studentInfo, attendanceSave, stuInfo, saveAttendance };

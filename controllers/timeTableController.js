@@ -68,14 +68,14 @@ const timeTableFetch = async (req, res) => {
         }
 
         const dayOrder = dayCounter % 6 === 0 ? 6 : dayCounter % 6;
-        console.log(dayOrder)
+        // console.log(dayOrder);
 
         // Fetching classes based on Time Table
         const timeTable = await TimeTable.find({
             day_order: dayOrder,
             $or: [{ session_1: staffId }, { session_2: staffId }]
         });
-        console.log("Timetable :", timeTable)
+        // console.log("Timetable :", timeTable)
 
         const substitution = await Substitution.find({ replacementStaffId: staffId, date: currentDate });
         // console.log("Substitution : ", substitution);
