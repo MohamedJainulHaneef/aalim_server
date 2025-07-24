@@ -97,7 +97,7 @@ const stuInfo = async (req, res) => {
         });
 
         if (!result) {
-            const students = await student.find({ year }).select('roll_no reg_no stu_name -_id');
+            const students = await Student.find({ year }).select('roll_no reg_no stu_name -_id');
             const records = students.map(s => ({
                 roll_no: s.roll_no, reg_no: s.reg_no,
                 stu_name: s.stu_name, status: true
@@ -107,7 +107,7 @@ const stuInfo = async (req, res) => {
 
         const rollNumbers = result.record.map(r => r.roll_no);
 
-        const students = await student.find({ roll_no: { $in: rollNumbers } }).select('roll_no reg_no stu_name -_id');
+        const students = await Student.find({ roll_no: { $in: rollNumbers } }).select('roll_no reg_no stu_name -_id');
 
         const statusMap = {};
         result.record.forEach(r => { statusMap[r.roll_no] = r.status });
