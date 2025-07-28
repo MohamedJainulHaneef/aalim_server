@@ -17,24 +17,25 @@ const timeTableFetch = async (req, res) => {
 
     try {
 
+        const staff = await Staff.findOne({ staffId }, 'fullName').lean();
         const now = new Date();
         const currentDate = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
         const isSunday = currentDate.getUTCDay() === 0;
-        if (isSunday) { return res.status(200).json([{ message: 'Today is Sunday - No classes' }])}
+        if (isSunday) { return res.status(200).json([{ message: 'Today is Sunday - No classes', staffName: staff?.fullName || 'N/A' }]) }
 
         const todayLeave = await Leave.findOne({
             leaveFromDate: { $lte: currentDate },
             leaveToDate: { $gte: currentDate }
         });
 
-        if (todayLeave) { return res.status(200).json([{ message: 'Today is a college leave', leave: todayLeave }]) }
+        if (todayLeave) { return res.status(200).json([{ message: 'Today is a college leave', leave: todayLeave, staffName: staff?.fullName || 'N/A' }]) }
 
         const academic = await Academic.findOne({
             academicFromDate: { $lte: currentDate },
             academicToDate: { $gte: currentDate }
         });
 
-        if (!academic) { return res.status(404).json([{ message: "Academic period not found" }]) }
+        if (!academic) { return res.status(404).json([{ message: "Academic period not found", staffName: staff?.fullName || 'N/A' }]) }
 
         const allLeaves = await Leave.find({
             leaveToDate: { $gte: academic.academicFromDate },
@@ -145,7 +146,7 @@ const timeTableFetch = async (req, res) => {
                 }
             })
         )
-        const staff = await Staff.findOne({ staffId }, 'fullName').lean();
+        console.log(enhancedClassList)
         return res.status(200).json([{ staffName: staff?.fullName || 'N/A' }, ...enhancedClassList]);
     }
     catch (error) { res.status(500).json([{ message: 'Server error' }]) }

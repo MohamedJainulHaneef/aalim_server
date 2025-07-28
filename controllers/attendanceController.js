@@ -129,7 +129,7 @@ const stuInfo = async (req, res) => {
 
 // --------------------------------------------------------------------------------------------------------------
 
-// Student Information for Admin Attendance Management 
+// Student Attendance Saving through Admin Menu
 
 const saveAttendance = async (req, res) => {
 
@@ -244,7 +244,7 @@ const saveAttendance = async (req, res) => {
 
 // --------------------------------------------------------------------------------------------------------------
 
-// Student Information for Admin Attendance Management 
+// Staff Daily Attendance Report
 
 const attendanceReport = async (req, res) => {
 
@@ -254,6 +254,8 @@ const attendanceReport = async (req, res) => {
 
         const now = new Date(date);
         const currentDate = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+        const isSunday = currentDate.getUTCDay() === 0;
+        if (isSunday) { return res.status(200).json([{ message: 'Today is Sunday - No classes'}]) }
 
         const todayLeave = await Leave.findOne({
             leaveFromDate: { $lte: currentDate },
