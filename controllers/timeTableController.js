@@ -5,7 +5,7 @@ const Leave = require('../models/Leave');
 const Substitution = require('../models/Substitution');
 const Attendance = require('../models/Attendance');
 const Academic = require('../models/Academic');
-const Course = require('../models/Course')
+const Course = require('../models/Course');
 
 // --------------------------------------------------------------------------------------------------------------
 
