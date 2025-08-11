@@ -43,17 +43,18 @@ const getStudentReport = async (req, res) => {
             {
                 $unwind: "$studentInfo"
             },
+            { $sort: { "studentInfo.year": 1 } },
             {
                 $project: {
                     _id: 0,
                     roll_no: "$_id",
                     reg_no: "$studentInfo.reg_no",
+                    year: "$studentInfo.year",
                     total: 1,
                     present: 1,
                     absent: 1
                 }
             },
-            { $sort: { roll_no: 1 } }
         ])
         res.status(200).json(result);
     } catch (error) {
