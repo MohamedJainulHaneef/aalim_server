@@ -146,7 +146,7 @@ const timeTableFetch = async (req, res) => {
                 }
             })
         )
-        console.log(enhancedClassList)
+        // console.log(enhancedClassList)
         return res.status(200).json([{ staffName: staff?.fullName || 'N/A' }, ...enhancedClassList]);
     }
     catch (error) { res.status(500).json([{ message: 'Server error' }]) }

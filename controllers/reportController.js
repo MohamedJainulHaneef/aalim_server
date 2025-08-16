@@ -43,7 +43,7 @@ const getStudentReport = async (req, res) => {
             {
                 $unwind: "$studentInfo"
             },
-            { $sort: { "studentInfo.year": 1 } },
+            { $sort: { "studentInfo.year": 1, "_id": 1 } },
             {
                 $project: {
                     _id: 0,
