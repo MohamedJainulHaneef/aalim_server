@@ -76,7 +76,7 @@ const editStaff = async (req, res) => {
 // Delete Staff
 
 const deleteStaff = async (req, res) => {
-    
+
     const { id } = req.body;
 
     try {
@@ -89,4 +89,52 @@ const deleteStaff = async (req, res) => {
     }
 };
 
-module.exports = { loginStaff, addStaff, fetchStaff, editStaff, deleteStaff };
+// --------------------------------------------------------------------------------------------------------------
+
+// Delete Staff
+
+const changePassword = async (req, res) => {
+
+    const { staffId, password } = req.body;
+
+    try {
+
+        if (!staffId || !password) {
+            return res.status(400).json({
+                success: false,
+                message: "Staff ID and password are required"
+            });
+        }
+
+        const staff = await Staff.findOne({ staffId });
+        if (!staff) {
+            return res.status(404).json({
+                success: false,
+                message: "Staff not found"
+            });
+        }
+
+        const updatedStaff = await Staff.findOneAndUpdate(
+            { staffId },
+            { password },
+            { new: true }
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "Password updated successfully",
+            data: updatedStaff
+        });
+
+    } catch (error) {
+        console.error("Error in changePassword : ", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error"
+        });
+    }
+};
+
+// --------------------------------------------------------------------------------------------------------------
+
+module.exports = { loginStaff, addStaff, fetchStaff, editStaff, deleteStaff, changePassword };

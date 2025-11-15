@@ -9,6 +9,7 @@ const attendanceRoutes = require('./routes/attendanceRoutes');
 const leaveRoutes = require('./routes/leaveRoutes');
 const substitutionRoutes = require('./routes/substitutionRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const dataDeletionRoutes = require('./routes/dataDeletionRoutes');
 
 dotenv.config();
 
@@ -30,6 +31,7 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/leave', leaveRoutes);
 app.use('/api/substitution', substitutionRoutes);
 app.use('/api/report', reportRoutes);
+app.use('/api/dataDeletion', dataDeletionRoutes);
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
