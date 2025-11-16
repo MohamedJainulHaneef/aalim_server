@@ -19,6 +19,7 @@ router.post('/staffClass', timeTableFetch);
 router.post('/timetable', upload.single('file'), async (req, res) => {
 
     try {
+
         const file = req.file;
 
         if (!file) { return res.status(400).send('File upload failed') }
@@ -45,10 +46,10 @@ router.post('/timetable', upload.single('file'), async (req, res) => {
         }
 
         fs.unlinkSync(file.path);
-        res.status(200).send('Time Table File Imported Successfully');
+        res.status(200).send('Timetable file imported successfully');
     } catch (err) {
         console.error('Upload Error:', err);
-        res.status(500).send('Error while uploading time table');
+        res.status(500).send('Error while uploading timetable');
     }
 })
 
@@ -87,7 +88,7 @@ router.post('/studentupload', upload.single('file'), async (req, res) => {
         }
 
         fs.unlinkSync(file.path);
-        res.status(200).send('Student data imported successfully (inserted/updated by roll_no)');
+        res.status(200).send('Student data imported successfully');
     } catch (err) {
         console.error('Upload error:', err);
         res.status(500).send('Error while uploading student file');
@@ -99,7 +100,9 @@ router.post('/studentupload', upload.single('file'), async (req, res) => {
 // Course File Uplaod
 
 router.post('/courseupload', upload.single('file'), async (req, res) => {
+
     try {
+        
         const file = req.file;
         if (!file) return res.status(400).send("No file uploaded");
 
@@ -148,5 +151,6 @@ router.post('/courseupload', upload.single('file'), async (req, res) => {
     }
 });
 
+// --------------------------------------------------------------------------------------------------------------
 
 module.exports = router;
