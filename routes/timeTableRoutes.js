@@ -7,6 +7,7 @@ const path = require('path');
 const upload = multer({ dest: 'uploads/' });
 const TimeTable = require('../models/TimeTable');
 const Student = require('../models/Student');
+const Course = require('../models/Course');
 const { timeTableFetch } = require('../controllers/timeTableController');
 
 router.post('/staffClass', timeTableFetch);
@@ -92,5 +93,60 @@ router.post('/studentupload', upload.single('file'), async (req, res) => {
         res.status(500).send('Error while uploading student file');
     }
 })
+
+// --------------------------------------------------------------------------------------------------------------
+
+// Course File Uplaod
+
+router.post('/courseupload', upload.single('file'), async (req, res) => {
+    try {
+        const file = req.file;
+        if (!file) return res.status(400).send("No file uploaded");
+
+        const workbook = XLSX.readFile(file.path);
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+        if (rows.length === 0) {
+            fs.unlinkSync(file.path);
+            return res.status(400).send("Excel file is empty");
+        }
+
+        const baseHeaders = ["courseCode", "courseTitle", "year", "semester"];
+        const actualHeaders = Object.keys(rows[0]);
+
+        const isValid = baseHeaders.every(h => actualHeaders.includes(h));
+        if (!isValid) {
+            fs.unlinkSync(file.path);
+            return res.status(400).send(
+                "Invalid Course File. Must include: courseCode, courseTitle, year, semester"
+            );
+        }
+
+        for (const row of rows) {
+            const { courseCode, courseTitle, year, semester } = row;
+            if (!courseCode) continue;
+
+            const handleStaffs = Object.keys(row)
+                .filter(k => k.startsWith("handleStaffs"))
+                .map(k => row[k])
+                .filter(v => v && v.trim() !== "");
+
+            await Course.findOneAndUpdate(
+                { courseCode },
+                { $set: { courseTitle, year, semester, handleStaffs } },
+                { upsert: true, new: true }
+            );
+        }
+
+        fs.unlinkSync(file.path);
+        res.status(200).send("Course file imported successfully");
+    } catch (err) {
+        console.error("Course Upload Error:", err);
+        res.status(500).send("Error while uploading course file");
+    }
+});
+
 
 module.exports = router;
