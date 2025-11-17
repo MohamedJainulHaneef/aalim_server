@@ -40,9 +40,12 @@ router.post('/timetable', upload.single('file'), async (req, res) => {
         }
 
         for (const row of rows) {
-            const { day_order, year, session_1, session_2 } = row;
+
+            const cleanRow = {};
+            Object.keys(row).forEach(key => { cleanRow[key] = typeof row[key] === "string" ? row[key].trim() : row[key] });
+            const { day_order, year, session_1, session_2 } = cleanRow;
             if (!day_order || !year || !session_1 || !session_2) continue;
-            await TimeTable.create({ day_order, year, session_1, session_2 })
+            await TimeTable.create({ day_order, year, session_1, session_2 });
         }
 
         fs.unlinkSync(file.path);
@@ -78,13 +81,23 @@ router.post('/studentupload', upload.single('file'), async (req, res) => {
         }
 
         for (const row of rows) {
-            const { roll_no, reg_no, stu_name, year } = row;
+
+            const cleanRow = {};
+            Object.keys(row).forEach(key => {
+                cleanRow[key] = typeof row[key] === "string"
+                    ? row[key].trim()
+                    : row[key];
+            });
+
+            const { roll_no, reg_no, stu_name, year } = cleanRow;
+
             if (!roll_no) continue;
+
             await Student.findOneAndUpdate(
                 { roll_no },
                 { $set: { reg_no, stu_name, year } },
                 { upsert: true, new: true }
-            )
+            );
         }
 
         fs.unlinkSync(file.path);
@@ -102,7 +115,7 @@ router.post('/studentupload', upload.single('file'), async (req, res) => {
 router.post('/courseupload', upload.single('file'), async (req, res) => {
 
     try {
-        
+
         const file = req.file;
         if (!file) return res.status(400).send("No file uploaded");
 
@@ -128,17 +141,33 @@ router.post('/courseupload', upload.single('file'), async (req, res) => {
         }
 
         for (const row of rows) {
-            const { courseCode, courseTitle, year, semester } = row;
+
+            const cleanRow = {};
+            Object.keys(row).forEach(key => {
+                cleanRow[key] = typeof row[key] === "string"
+                    ? row[key].trim()
+                    : row[key];
+            });
+
+            const { courseCode, courseTitle, year, semester } = cleanRow;
+
             if (!courseCode) continue;
 
-            const handleStaffs = Object.keys(row)
+            const handleStaffs = Object.keys(cleanRow)
                 .filter(k => k.startsWith("handleStaffs"))
-                .map(k => row[k])
-                .filter(v => v && v.trim() !== "");
+                .map(k => cleanRow[k])
+                .filter(v => v && v.trim() !== ""); 
 
             await Course.findOneAndUpdate(
                 { courseCode },
-                { $set: { courseTitle, year, semester, handleStaffs } },
+                {
+                    $set: {
+                        courseTitle,
+                        year,
+                        semester,
+                        handleStaffs
+                    }
+                },
                 { upsert: true, new: true }
             );
         }
