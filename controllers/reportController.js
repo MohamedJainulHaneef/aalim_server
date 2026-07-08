@@ -19,43 +19,65 @@ const getStudentReport = async (req, res) => {
             { $unwind: "$record" },
             {
                 $group: {
-                    _id: "$record.roll_no", total: { $sum: 1 },
+                    _id: "$record.roll_no", 
+                    total: { $sum: 1 },
                     present: {
-                        $sum: {
-                            $cond: [{ $eq: ["$record.status", true] }, 1, 0]
-                        }
+                        $sum: { $cond: [{ $eq: ["$record.status", true] }, 1, 0] }
                     },
                     absent: {
-                        $sum: {
-                            $cond: [{ $eq: ["$record.status", false] }, 1, 0]
-                        }
+                        $sum: { $cond: [{ $eq: ["$record.status", false] }, 1, 0] }
                     }
                 }
             },
             {
                 $lookup: {
-                    from: "students",
-                    localField: "_id",
-                    foreignField: "roll_no",
+                    from: "students", 
+                    localField: "_id",     
+                    foreignField: "roll_no", 
                     as: "studentInfo"
                 }
             },
             {
-                $unwind: "$studentInfo"
+                $unwind: {
+                    path: "$studentInfo",
+                    preserveNullAndEmptyArrays: true 
+                }
             },
-            { $sort: { "studentInfo.year": 1, "_id": 1 } },
+            {
+                $addFields: {
+                    yearOrder: {
+                        $switch: {
+                            branches: [
+                                { case: { $eq: ["$studentInfo.year", "I Year"] }, then: 1 },
+                                { case: { $eq: ["$studentInfo.year", "II Year"] }, then: 2 },
+                                { case: { $eq: ["$studentInfo.year", "III Year"] }, then: 3 },
+                                { case: { $eq: ["$studentInfo.year", "IV Year"] }, then: 4 },
+                                { case: { $eq: ["$studentInfo.year", "V Year"] }, then: 5 }
+                            ],
+                            default: 6 
+                        }
+                    }
+                }
+            },
+            { 
+                $sort: { 
+                    "yearOrder": 1, 
+                    "_id": 1 
+                } 
+            }, 
             {
                 $project: {
                     _id: 0,
                     roll_no: "$_id",
-                    reg_no: "$studentInfo.reg_no",
-                    year: "$studentInfo.year",
+                    reg_no: { $ifNull: ["$studentInfo.reg_no", "N/A"] },
+                    stu_name: { $ifNull: ["$studentInfo.stu_name", "Unknown"] },  
+                    year: { $ifNull: ["$studentInfo.year", "Unknown Year"] },
                     total: 1,
                     present: 1,
                     absent: 1
                 }
-            },
-        ])
+            }
+        ]);
         res.status(200).json(result);
     } catch (error) {
         console.error("Error fetching attendance stats:", error);
@@ -90,7 +112,6 @@ const getStaffReport = async (req, res) => {
             },
             { $sort: { staffId: 1 } }
         ]);
-        console.log(result)
         res.status(200).json(result);
     } catch (error) {
         console.error("Error fetching staff report:", error);

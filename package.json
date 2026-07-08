@@ -19,7 +19,7 @@
   "homepage": "https://github.com/MohamedJainulHaneef/aalim_server#readme",
   "description": "",
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.14"
   },
   "dependencies": {
     "body-parser": "^2.2.0",
